@@ -1,6 +1,6 @@
 // TAGTOWN UI/input: virtual joystick, drag-look, buttons, palette, settings.
 import { settings, saveSettings, toast } from './util.js';
-import { PALETTE } from './spray.js';
+import { PALETTE, STENCILS, CAPS } from './spray.js';
 import { CHARACTERS } from './characters.js';
 
 export class UI {
@@ -22,6 +22,7 @@ export class UI {
     this.bindKeys();
     this.bindButtons();
     this.buildPalette();
+    this.buildSprayBar();
     this.bindSettings();
     this.buildCharacterSeg();
     this.refreshSettingsUI();
@@ -184,6 +185,42 @@ export class UI {
   }
   markColor(hex) {
     for (const s of this.swatches) s.el.classList.toggle('sel', s.hex === hex);
+  }
+  // ---------- spray bar: caps (precision) + stencils (shapes) ----------
+  buildSprayBar() {
+    const bar = document.getElementById('stencils');
+    bar.innerHTML = '';
+    this.capChips = []; this.stencilBtns = [];
+    const tap = (el, fn) => {
+      const go = e => { e.preventDefault(); e.stopPropagation(); fn(); };
+      el.addEventListener('touchstart', go, { passive: false });
+      el.addEventListener('mousedown', e => { e.stopPropagation(); fn(); });
+    };
+    CAPS.forEach(c => {
+      const d = document.createElement('div');
+      d.className = 'capchip' + (settings.cap === c.id ? ' sel' : '');
+      d.textContent = c.label;
+      tap(d, () => this.hooks.onCap(c.id));
+      bar.appendChild(d);
+      this.capChips.push({ id: c.id, el: d });
+    });
+    const sep = document.createElement('div');
+    sep.className = 'barsep';
+    bar.appendChild(sep);
+    STENCILS.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'stencil' + (settings.stencil === s.id ? ' sel' : '');
+      d.textContent = s.icon;
+      tap(d, () => this.hooks.onStencil(s.id));
+      bar.appendChild(d);
+      this.stencilBtns.push({ id: s.id, el: d });
+    });
+  }
+  markStencil(id) {
+    for (const b of this.stencilBtns) b.el.classList.toggle('sel', b.id === id);
+  }
+  markCap(id) {
+    for (const b of this.capChips) b.el.classList.toggle('sel', b.id === id);
   }
 
   // ---------- settings ----------

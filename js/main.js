@@ -76,6 +76,8 @@ const ui = new UI({
   onToggleSprayBtn: () => spray.toggleSpray(),
   onLook: (dx, dy) => { spray.active ? spray.addLook(dx, dy) : player.addLook(dx, dy); },
   onColor: hex => { spray.setColor(hex); ui.markColor(hex); },
+  onStencil: id => { spray.setStencil(id); ui.markStencil(id); },
+  onCap: id => { spray.setCap(id); ui.markCap(id); },
   onSettings: key => {
     if (key === 'difficulty') {
       world.setPickupVisible(settings.difficulty === 'normal');
@@ -85,13 +87,13 @@ const ui = new UI({
     if (key === 'handed') ui.applyHandedness();
     if (key === 'character') {
       player.setCharacter(settings.character);
-      document.querySelector('#title small').textContent = `starring ${player.characterName} · v5`;
+      document.querySelector('#title small').textContent = `starring ${player.characterName} · v6`;
     }
   },
   sprayActive: () => spray.active,
 });
 
-document.querySelector('#title small').textContent = `starring ${player.characterName} · v5`;
+document.querySelector('#title small').textContent = `starring ${player.characterName} · v6`;
 
 const clock = new THREE.Clock();
 let first = true;

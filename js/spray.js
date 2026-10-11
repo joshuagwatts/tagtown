@@ -2,7 +2,7 @@
 // Walls are canvas textures (see world.js) — paint is drawn at the raycast UV
 // so it sticks to the surface permanently.
 import * as THREE from 'three';
-import { clamp, settings } from './util.js';
+import { clamp, settings, saveSettings } from './util.js';
 
 function hexA(hex, a) {
   const n = parseInt(hex.slice(1), 16);
@@ -10,6 +10,53 @@ function hexA(hex, a) {
 }
 
 const PALETTE = ['#e63946', '#f4842c', '#ffd23f', '#43c465', '#3a86ff', '#9b5de5', '#222222', '#ffffff'];
+
+// stencil shape tracers: path in canvas px around (px,py) with radius r
+function traceStar(ctx, px, py, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5;
+    const rr = i % 2 === 0 ? r : r * 0.45;
+    const x = px + Math.cos(a) * rr, y = py + Math.sin(a) * rr;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+function traceHeart(ctx, px, py, r) {
+  ctx.beginPath();
+  ctx.moveTo(px, py + r * 0.9);
+  ctx.bezierCurveTo(px - r * 1.4, py - r * 0.1, px - r * 0.7, py - r * 1.1, px, py - r * 0.35);
+  ctx.bezierCurveTo(px + r * 0.7, py - r * 1.1, px + r * 1.4, py - r * 0.1, px, py + r * 0.9);
+  ctx.closePath();
+}
+function poly(ctx, px, py, r, pts) {
+  ctx.beginPath();
+  pts.forEach(([x, y], i) => {
+    const X = px + x * r, Y = py + y * r;
+    i === 0 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y);
+  });
+  ctx.closePath();
+}
+const traceBolt = (ctx, px, py, r) => poly(ctx, px, py, r,
+  [[0.15, -1], [-0.45, 0.15], [-0.05, 0.15], [-0.15, 1], [0.45, -0.15], [0.05, -0.15]]);
+const traceCrown = (ctx, px, py, r) => poly(ctx, px, py, r,
+  [[-0.9, 0.6], [-0.9, -0.3], [-0.45, 0.1], [0, -0.6], [0.45, 0.1], [0.9, -0.3], [0.9, 0.6]]);
+
+const STENCILS = [
+  { id: 'free',  icon: '🎨', mode: 'fill' },
+  { id: 'star',  icon: '⭐', mode: 'fill', trace: traceStar },
+  { id: 'heart', icon: '💜', mode: 'fill', trace: traceHeart },
+  { id: 'bolt',  icon: '⚡', mode: 'fill', trace: traceBolt },
+  { id: 'crown', icon: '👑', mode: 'fill', trace: traceCrown },
+  { id: 'ring',  icon: '⭕', mode: 'stroke' },
+];
+
+// spray caps: fat = wide soft fills, skinny = thin precise lines
+const CAPS = [
+  { id: 'fat',    label: 'FAT',  mult: 1.7,  soft: 0.55, spread: 0.8 },
+  { id: 'med',    label: 'MED',  mult: 1.0,  soft: 0.72, spread: 0.5 },
+  { id: 'skinny', label: 'SKIN', mult: 0.55, soft: 0.88, spread: 0.22 },
+];
 
 class SprayParticles {
   constructor(scene) {
@@ -72,6 +119,8 @@ export class SprayMode {
     this.walk = { x: 0, z: 0 };   // first-person walk input (left stick / WASD)
     this.walkPhase = 0;
     this.color = settings.color || PALETTE[0];
+    this.stencil = settings.stencil || 'free';
+    this.cap = CAPS.find(c => c.id === settings.cap) || CAPS[1];
     this.paint = 100;   // normal mode meter
     this.ray = new THREE.Raycaster();
     this.ray.far = 14;
@@ -105,6 +154,16 @@ export class SprayMode {
     this.canBodyMat.color.set(hex);
   }
   setWalk(x, z) { this.walk.x = x; this.walk.z = z; }
+  setStencil(id) {
+    if (!STENCILS.some(s => s.id === id)) id = 'free';
+    this.stencil = id; settings.stencil = id;
+    saveSettings();
+  }
+  setCap(id) {
+    const cap = CAPS.find(c => c.id === id) || CAPS[1];
+    this.cap = cap; settings.cap = cap.id;
+    saveSettings();
+  }
   // tap the spray button to toggle — built for two thumbs:
   // left stick walks, right thumb aims, paint stays on while you move
   toggleSpray() {
@@ -124,6 +183,7 @@ export class SprayMode {
     this.walk.x = this.walk.z = 0;
     document.getElementById('crosshair').style.display = 'block';
     document.getElementById('palette').classList.add('show');
+    document.getElementById('stencils').classList.add('show');
     document.getElementById('btnSprayToggle').classList.add('show');
     document.getElementById('btnSpray').classList.add('active');
     document.getElementById('btnExitSpray').style.display = 'flex';
@@ -137,6 +197,7 @@ export class SprayMode {
     this.can.visible = false;
     document.getElementById('crosshair').style.display = 'none';
     document.getElementById('palette').classList.remove('show');
+    document.getElementById('stencils').classList.remove('show');
     const tgl = document.getElementById('btnSprayToggle');
     tgl.classList.remove('show'); tgl.classList.remove('active');
     document.getElementById('btnSpray').classList.remove('active');
@@ -152,14 +213,30 @@ export class SprayMode {
   paintAt(surf, uv, dist) {
     const { canvas, ctx, tex, wM, hM } = surf;
     const px = uv.x * canvas.width, py = (1 - uv.y) * canvas.height;
-    const worldR = 0.2 + dist * 0.035;              // wider splat from farther away
+    const worldR = (0.2 + dist * 0.035) * this.cap.mult;   // cap sets the precision
     const rx = worldR * canvas.width / wM, ry = worldR * canvas.height / hM;
-    const g = ctx.createRadialGradient(px, py, 0, px, py, rx);
-    g.addColorStop(0, hexA(this.color, 1));
-    g.addColorStop(0.72, hexA(this.color, 0.95));
-    g.addColorStop(1, hexA(this.color, 0));
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    const sten = STENCILS.find(s => s.id === this.stencil);
+    if (!sten || sten.id === 'free') {
+      // free spray: soft clean blob, no speckles — fat cap is wide/soft, skinny is thin/hard
+      const g = ctx.createRadialGradient(px, py, 0, px, py, rx);
+      g.addColorStop(0, hexA(this.color, 1));
+      g.addColorStop(this.cap.soft, hexA(this.color, 0.95));
+      g.addColorStop(1, hexA(this.color, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    } else {
+      // stencil: crisp solid shape in the paint color
+      const r = Math.min(rx, ry);
+      ctx.fillStyle = this.color;
+      ctx.strokeStyle = this.color;
+      if (sten.id === 'ring') {
+        ctx.lineWidth = Math.max(2, r * 0.35);
+        ctx.beginPath(); ctx.arc(px, py, r * 0.8, 0, Math.PI * 2); ctx.stroke();
+      } else {
+        sten.trace(ctx, px, py, r);
+        ctx.fill();
+      }
+    }
     tex.needsUpdate = true;
   }
 
@@ -202,7 +279,7 @@ export class SprayMode {
           this.paintAt(surf, h.uv, h.distance);
           this._hitP.copy(h.point);
           const dir = this._v2.copy(this._hitP).sub(this._v1).normalize();
-          this.particles.emit(this._v1, dir, this.color, 5, 0.3, h.distance * 1.6);
+          this.particles.emit(this._v1, dir, this.color, 5, this.cap.spread * 0.6, h.distance * 1.6);
           // a few bounce-back flecks at the wall
           this.particles.emit(this._hitP, this._v3.clone().negate(), this.color, 2, 1.4, 1.2);
         }
@@ -216,4 +293,4 @@ export class SprayMode {
   }
 }
 
-export { PALETTE };
+export { PALETTE, STENCILS, CAPS };
