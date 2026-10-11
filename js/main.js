@@ -63,10 +63,17 @@ const ui = new UI({
   },
   onToggleSpray: () => {
     if (spray.active) spray.exit();
-    else { spray.enter(); toast('Drag to aim · second finger (or hold the button) sprays'); }
+    else {
+      if (player.riding) {  // spray mode is on foot
+        player.toggleRide();
+        document.getElementById('btnSkate').classList.remove('active');
+      }
+      spray.enter();
+      toast('Left stick walks · drag aims · tap 🎨 to toggle paint');
+    }
   },
   onExitSpray: () => spray.exit(),
-  onHoldSpray: down => { spray.spraying = down; },
+  onToggleSprayBtn: () => spray.toggleSpray(),
   onLook: (dx, dy) => { spray.active ? spray.addLook(dx, dy) : player.addLook(dx, dy); },
   onColor: hex => { spray.setColor(hex); ui.markColor(hex); },
   onSettings: key => {
@@ -90,6 +97,8 @@ function loop() {
   const t = clock.elapsedTime;
 
   if (spray.active) {
+    const k = ui.keyInput();
+    spray.setWalk(ui.joy.x + k.x, ui.joy.z + k.z);
     spray.update(dt);
   } else {
     const k = ui.keyInput();

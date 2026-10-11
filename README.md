@@ -6,8 +6,10 @@ vibe (colorful, lighthearted, simple) with Skate 4-style cruising bolted on.
 **Play:** https://joshuagwatts.github.io/tagtown/ (open in Chrome on your phone)
 
 - Walk / skate around a chill fenced-in block (the fence is the world border for now)
+  as **Willy** — the purple one-eyed star of Joshua's @thrumyeyez__ animation
 - Hit the 🎨 SPRAY button for first-person spray mode — paint any wall or the fence,
-  the paint sticks (canvas-texture decals)
+  the paint sticks (canvas-texture decals). Left stick walks while you paint,
+  drag aims, tap the 🎨 button to toggle paint on/off — built for two thumbs
 - 8-color palette, spray-can HUD, Easy (infinite paint) / Normal (refill at the paint
   can by the door) difficulty in ⚙️ settings
 - 🛹 button or R key: hop on the skateboard — faster, ollie jump, lean-into-turns

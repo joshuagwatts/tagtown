@@ -4,10 +4,10 @@ import { PALETTE } from './spray.js';
 
 export class UI {
   constructor(hooks) {
-    this.hooks = hooks;               // {onJump,onToggleSpray,onExitSpray,onHoldSpray(down),onLook,onColor,onSettings}
+    this.hooks = hooks;               // {onJump,onToggleSpray,onExitSpray,onToggleSprayBtn,onLook,onColor,onSettings}
     this.joy = { x: 0, z: 0 };
     this.keys = {};
-    this._joyId = null; this._lookId = null; this._sprayTouchId = null;
+    this._joyId = null; this._lookId = null;
     this._joyCX = 0; this._joyCY = 0;
     this._lastLX = 0; this._lastLY = 0;
     this._mouseLook = false; this._mlx = 0; this._mly = 0;
@@ -74,29 +74,17 @@ export class UI {
           this.joyBase.style.display = this.joyKnob.style.display = 'none';
         }
         if (t.identifier === this._lookId) this._lookId = null;
-        if (t.identifier === this._sprayTouchId) {
-          this._sprayTouchId = null;
-          this.hooks.onHoldSpray(false);
-        }
       }
     };
     document.addEventListener('touchmove', move, { passive: false });
     document.addEventListener('touchend', end);
     document.addEventListener('touchcancel', end);
     // look-drag starts on the 3D view (not on HUD buttons).
-    // spray mode: first finger aims, ANY second finger on the view sprays —
-    // no more reaching for a corner button while aiming.
+    // spray mode: one finger aims; paint is a tap-toggle so the other
+    // thumb stays free for the walk stick.
     document.getElementById('game').addEventListener('touchstart', e => {
       for (const t of e.changedTouches) {
-        if (this.hooks.sprayActive()) {
-          if (this._lookId === null && this.inLookZone(t.clientX)) {
-            this._lookId = t.identifier;
-            this._lastLX = t.clientX; this._lastLY = t.clientY;
-          } else if (this._sprayTouchId === null) {
-            this._sprayTouchId = t.identifier;
-            this.hooks.onHoldSpray(true);
-          }
-        } else if (this._lookId === null && this.inLookZone(t.clientX)) {
+        if (this._lookId === null && this.inLookZone(t.clientX)) {
           this._lookId = t.identifier;
           this._lastLX = t.clientX; this._lastLY = t.clientY;
         }
@@ -110,17 +98,14 @@ export class UI {
     const start = () => {};
     document.getElementById('game').addEventListener('mousedown', e => {
       this._mouseLook = true; this._mlx = e.clientX; this._mly = e.clientY;
-      if (this.hooks.sprayActive()) this.hooks.onHoldSpray(true);
+      if (this.hooks.sprayActive()) this.hooks.onToggleSprayBtn();
     });
     document.addEventListener('mousemove', e => {
       if (!this._mouseLook) return;
       this.hooks.onLook(e.clientX - this._mlx, e.clientY - this._mly);
       this._mlx = e.clientX; this._mly = e.clientY;
     });
-    document.addEventListener('mouseup', () => {
-      this._mouseLook = false;
-      this.hooks.onHoldSpray(false);
-    });
+    document.addEventListener('mouseup', () => { this._mouseLook = false; });
     document.addEventListener('contextmenu', e => e.preventDefault());
   }
 
@@ -163,7 +148,7 @@ export class UI {
     this.press($('btnSkate'), () => this.hooks.onToggleRide());
     this.press($('btnSpray'), () => this.hooks.onToggleSpray());
     this.press($('btnExitSpray'), () => this.hooks.onExitSpray());
-    this.press($('btnHoldSpray'), () => this.hooks.onHoldSpray(true), () => this.hooks.onHoldSpray(false));
+    this.press($('btnSprayToggle'), () => this.hooks.onToggleSprayBtn());
     this.press($('btnGear'), () => $('settingsPanel').classList.add('show'));
     this.press($('btnCloseSettings'), () => $('settingsPanel').classList.remove('show'));
   }

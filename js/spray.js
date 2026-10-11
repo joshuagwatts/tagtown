@@ -69,6 +69,8 @@ export class SprayMode {
     this.active = false;
     this.yaw = 0; this.pitch = 0;
     this.spraying = false;
+    this.walk = { x: 0, z: 0 };   // first-person walk input (left stick / WASD)
+    this.walkPhase = 0;
     this.color = settings.color || PALETTE[0];
     this.paint = 100;   // normal mode meter
     this.ray = new THREE.Raycaster();
@@ -102,6 +104,14 @@ export class SprayMode {
     this.color = hex; settings.color = hex;
     this.canBodyMat.color.set(hex);
   }
+  setWalk(x, z) { this.walk.x = x; this.walk.z = z; }
+  // tap the spray button to toggle — built for two thumbs:
+  // left stick walks, right thumb aims, paint stays on while you move
+  toggleSpray() {
+    if (!this.active) return;
+    this.spraying = !this.spraying;
+    document.getElementById('btnSprayToggle').classList.toggle('active', this.spraying);
+  }
   get infinite() { return settings.difficulty === 'easy'; }
 
   enter() {
@@ -111,14 +121,15 @@ export class SprayMode {
     this.yaw = this.player.yaw + Math.PI; this.pitch = -0.02;
     this.player.group.visible = false;
     this.can.visible = true;
+    this.walk.x = this.walk.z = 0;
     document.getElementById('crosshair').style.display = 'block';
     document.getElementById('palette').classList.add('show');
-    document.getElementById('btnHoldSpray').classList.add('show');
+    document.getElementById('btnSprayToggle').classList.add('show');
     document.getElementById('btnSpray').classList.add('active');
     document.getElementById('btnExitSpray').style.display = 'flex';
     document.getElementById('btnJump').style.display = 'none';
     document.getElementById('btnSkate').style.display = 'none';
-    document.getElementById('joy').style.display = 'none';
+    // joystick stays up: left thumb walks in first person, right thumb aims
   }
   exit() {
     this.active = false; this.spraying = false;
@@ -126,12 +137,12 @@ export class SprayMode {
     this.can.visible = false;
     document.getElementById('crosshair').style.display = 'none';
     document.getElementById('palette').classList.remove('show');
-    document.getElementById('btnHoldSpray').classList.remove('show');
+    const tgl = document.getElementById('btnSprayToggle');
+    tgl.classList.remove('show'); tgl.classList.remove('active');
     document.getElementById('btnSpray').classList.remove('active');
     document.getElementById('btnExitSpray').style.display = 'none';
     document.getElementById('btnJump').style.display = 'flex';
     document.getElementById('btnSkate').style.display = 'flex';
-    document.getElementById('joy').style.display = 'block';
   }
   addLook(dx, dy) {
     this.yaw -= dx * 0.0042;
@@ -164,9 +175,15 @@ export class SprayMode {
   refill() { this.paint = 100; }
 
   update(dt) {
-    // camera sits at the head
+    // walk in first person — stick input relative to where you're looking
+    const wmag = Math.min(1, Math.hypot(this.walk.x, this.walk.z));
+    if (wmag > 0.01) this.player.moveStep(this.walk.x, this.walk.z, this.yaw, dt, this.world, 0.55);
+    this.walkPhase += dt * 9 * wmag;
+
+    // camera sits at the head, with a little bob while walking
     this.player.getHeadPos(this._v1);
     this.camera.position.copy(this._v1);
+    this.camera.position.y += Math.sin(this.walkPhase) * 0.035 * Math.min(1, wmag);
     this._v2.set(0, 0, -1).applyEuler(this.camera.rotation);
     const e = new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ');
     this.camera.quaternion.setFromEuler(e);
