@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#7ec8f7">
+<title>TAGTOWN — toony spray-paint sandbox</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛹</text></svg>">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#7ec8f7; overscroll-behavior:none;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    touch-action:none; user-select:none; -webkit-user-select:none; }
+  #game { position:fixed; inset:0; }
+  #game canvas { display:block; width:100%; height:100%; }
+
+  .hud { position:fixed; z-index:10; pointer-events:none; }
+  .btn, #palette, #settingsPanel { pointer-events:auto; }
+
+  /* top bar */
+  #topbar { top:calc(10px + env(safe-area-inset-top)); left:12px; right:12px; display:flex;
+    justify-content:space-between; align-items:flex-start; }
+  #title { background:rgba(20,20,30,.55); color:#fff; font-weight:800; letter-spacing:1px;
+    padding:8px 14px; border-radius:14px; font-size:15px; text-shadow:0 1px 2px #000; }
+  #title small { display:block; font-weight:400; font-size:11px; opacity:.8; letter-spacing:0; }
+  #paintWrap { background:rgba(20,20,30,.55); border-radius:14px; padding:8px 12px; color:#fff;
+    font-size:12px; font-weight:700; min-width:150px; }
+  #paintBarOuter { height:10px; background:rgba(255,255,255,.25); border-radius:6px; margin-top:5px; overflow:hidden; }
+  #paintBar { height:100%; width:100%; border-radius:6px; background:linear-gradient(90deg,#ff5d5d,#ffb13d); transition:width .15s; }
+
+  .btn { background:rgba(20,20,30,.6); color:#fff; border:2px solid rgba(255,255,255,.35);
+    border-radius:50%; width:64px; height:64px; font-size:13px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    text-shadow:0 1px 2px #000; cursor:pointer; }
+  .btn:active { transform:scale(.93); background:rgba(60,60,80,.7); }
+  .btn.small { width:46px; height:46px; font-size:16px; border-radius:14px; }
+  .btn.active { background:rgba(255,120,40,.75); border-color:#fff; }
+
+  #btnJump { right:110px; bottom:calc(24px + env(safe-area-inset-bottom)); position:fixed; }
+  #btnSpray { right:18px; bottom:calc(24px + env(safe-area-inset-bottom)); position:fixed; width:76px; height:76px; }
+  #btnSkate { right:202px; bottom:calc(24px + env(safe-area-inset-bottom)); position:fixed; }
+  #btnGear { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; display:none; }
+  #btnExitSpray { position:fixed; top:calc(64px + env(safe-area-inset-top)); right:12px; display:none; }
+
+  /* joystick */
+  #joy { position:fixed; left:0; bottom:0; width:45%; height:55%; z-index:9; pointer-events:auto; }
+  #joyBase { position:absolute; width:110px; height:110px; border-radius:50%;
+    background:rgba(255,255,255,.18); border:2px solid rgba(255,255,255,.45); display:none; }
+  #joyKnob { position:absolute; width:52px; height:52px; border-radius:50%;
+    background:rgba(255,255,255,.65); box-shadow:0 2px 8px rgba(0,0,0,.3); display:none; }
+
+  /* spray mode ui */
+  #crosshair { position:fixed; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px;
+    z-index:10; display:none; pointer-events:none; }
+  #crosshair::before, #crosshair::after { content:""; position:absolute; background:#fff;
+    box-shadow:0 0 3px #000; }
+  #crosshair::before { left:12px; top:2px; width:2px; height:22px; }
+  #crosshair::after { top:12px; left:2px; height:2px; width:22px; }
+  #palette { position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(18px + env(safe-area-inset-bottom)); z-index:11; display:none;
+    background:rgba(20,20,30,.6); border-radius:16px; padding:8px 10px; gap:8px; }
+  #palette.show { display:flex; }
+  .swatch { width:38px; height:38px; border-radius:50%; border:3px solid rgba(255,255,255,.4); cursor:pointer; }
+  .swatch.sel { border-color:#fff; box-shadow:0 0 0 2px #fff, 0 2px 8px rgba(0,0,0,.4); transform:scale(1.12); }
+  #btnHoldSpray { position:fixed; right:18px; bottom:calc(110px + env(safe-area-inset-bottom));
+    z-index:11; display:none; width:92px; height:92px; font-size:14px; }
+  #btnHoldSpray.show { display:flex; }
+
+  /* settings */
+  #settingsPanel { position:fixed; z-index:30; left:50%; top:50%; transform:translate(-50%,-50%);
+    background:#1d1d2b; color:#fff; border-radius:20px; padding:22px; width:min(340px,88vw);
+    display:none; box-shadow:0 12px 40px rgba(0,0,0,.5); }
+  #settingsPanel.show { display:block; }
+  #settingsPanel h2 { font-size:18px; margin-bottom:14px; }
+  #settingsPanel .row { margin:12px 0; font-size:14px; }
+  #settingsPanel .seg { display:flex; gap:8px; margin-top:6px; }
+  #settingsPanel .seg button { flex:1; padding:10px; border-radius:12px; border:2px solid #555;
+    background:#2a2a3d; color:#fff; font-weight:700; font-size:14px; cursor:pointer; }
+  #settingsPanel .seg button.sel { border-color:#ffb13d; background:#4a3a1d; }
+  #settingsPanel .close { margin-top:14px; width:100%; padding:12px; border-radius:12px; border:0;
+    background:#ffb13d; color:#1d1d2b; font-weight:800; font-size:15px; cursor:pointer; }
+  #settingsPanel p.hint { font-size:12px; opacity:.65; margin-top:10px; line-height:1.5; }
+
+  #toast { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); z-index:40;
+    background:rgba(20,20,30,.8); color:#fff; padding:10px 18px; border-radius:14px;
+    font-size:14px; font-weight:600; display:none; pointer-events:none; max-width:86vw; text-align:center; }
+
+  #err { position:fixed; z-index:99; left:8px; right:8px; top:8px; background:#b3261e; color:#fff;
+    padding:10px 12px; border-radius:12px; font:12px/1.4 monospace; display:none;
+    white-space:pre-wrap; word-break:break-word; max-height:40vh; overflow:auto; }
+
+  #vign { position:fixed; inset:0; z-index:5; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 62%, rgba(0,0,20,.28) 100%); }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="vign"></div>
+
+<div class="hud" id="topbar">
+  <div id="title">TAGTOWN <small>toony spray sandbox · v1</small></div>
+  <div id="paintWrap">🎨 PAINT <span id="paintPct">∞</span><div id="paintBarOuter"><div id="paintBar"></div></div></div>
+</div>
+
+<button class="btn small hud" id="btnGear">⚙️</button>
+<button class="btn small hud" id="btnExitSpray">✕</button>
+
+<div id="joy"><div id="joyBase"></div><div id="joyKnob"></div></div>
+<button class="btn hud" id="btnJump">JUMP</button>
+<button class="btn hud" id="btnSkate">🛹</button>
+<button class="btn hud" id="btnSpray">🎨<br>SPRAY</button>
+<button class="btn hud" id="btnHoldSpray">HOLD<br>2 SPRAY</button>
+
+<div id="crosshair"></div>
+<div id="palette"></div>
+
+<div id="settingsPanel">
+  <h2>⚙️ Settings</h2>
+  <div class="row">Difficulty
+    <div class="seg" id="segDiff">
+      <button data-v="easy">😌 Easy</button>
+      <button data-v="normal">🎯 Normal</button>
+    </div>
+  </div>
+  <div class="row">Quality
+    <div class="seg" id="segQual">
+      <button data-v="high">High</button>
+      <button data-v="low">Low</button>
+    </div>
+  </div>
+  <p class="hint">Easy: infinite paint, big splats. Normal: paint runs out — grab the paint-can pickup by the door to refill.<br><br>Walk: left stick / WASD · Look: drag / mouse · Jump: button / Space · Skate: 🛹 / R · Spray mode: 🎨 button / F · Paint: hold the spray button / mouse.</p>
+  <button class="close" id="btnCloseSettings">Done</button>
+</div>
+
+<div id="toast"></div>
+<div id="err"></div>
+
+<script type="importmap">
+{ "imports": { "three": "./js/vendor/three.module.js" } }
+</script>
+<script type="module" src="js/main.js?v=1"></script>
+</body>
+</html>
