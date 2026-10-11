@@ -160,15 +160,6 @@ export class SprayMode {
     g.addColorStop(1, hexA(this.color, 0));
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
-    // toony splatter flecks
-    ctx.fillStyle = hexA(this.color, 0.85);
-    for (let i = 0; i < 7; i++) {
-      const a = Math.random() * Math.PI * 2, d = rx * (0.9 + Math.random() * 1.1);
-      const r = 1 + Math.random() * rx * 0.12;
-      ctx.beginPath();
-      ctx.arc(px + Math.cos(a) * d, py + Math.sin(a) * d * (ry / rx), r, 0, Math.PI * 2);
-      ctx.fill();
-    }
     tex.needsUpdate = true;
   }
 

@@ -1,6 +1,7 @@
 // TAGTOWN UI/input: virtual joystick, drag-look, buttons, palette, settings.
 import { settings, saveSettings, toast } from './util.js';
 import { PALETTE } from './spray.js';
+import { CHARACTERS } from './characters.js';
 
 export class UI {
   constructor(hooks) {
@@ -22,8 +23,20 @@ export class UI {
     this.bindButtons();
     this.buildPalette();
     this.bindSettings();
+    this.buildCharacterSeg();
     this.refreshSettingsUI();
     this.applyHandedness();
+  }
+
+  buildCharacterSeg() {
+    const seg = document.getElementById('segChar');
+    seg.innerHTML = '';
+    for (const [id, c] of Object.entries(CHARACTERS)) {
+      const b = document.createElement('button');
+      b.dataset.v = id;
+      b.textContent = (c.tag === 'prototype' ? '🧪 ' : '') + c.name;
+      seg.appendChild(b);
+    }
   }
 
   applyHandedness() {
@@ -185,13 +198,15 @@ export class UI {
           ? (settings.difficulty === 'easy' ? '😌 Easy: infinite paint' : '🎯 Normal: paint runs out — refill at the can by the door')
           : key === 'handed'
             ? (settings.handed === 'left' ? '👈 Left-handed controls' : '👉 Right-handed controls')
-            : ('Quality: ' + settings.quality));
+            : key === 'character'
+              ? ('🧪 ' + CHARACTERS[settings.character].name + ' equipped')
+              : ('Quality: ' + settings.quality));
       });
     };
-    seg('segDiff', 'difficulty'); seg('segQual', 'quality'); seg('segHand', 'handed');
+    seg('segDiff', 'difficulty'); seg('segQual', 'quality'); seg('segHand', 'handed'); seg('segChar', 'character');
   }
   refreshSettingsUI() {
-    for (const [id, key] of [['segDiff', 'difficulty'], ['segQual', 'quality'], ['segHand', 'handed']]) {
+    for (const [id, key] of [['segDiff', 'difficulty'], ['segQual', 'quality'], ['segHand', 'handed'], ['segChar', 'character']]) {
       document.getElementById(id).querySelectorAll('button').forEach(b =>
         b.classList.toggle('sel', b.dataset.v === settings[key]));
     }

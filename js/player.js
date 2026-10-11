@@ -1,81 +1,16 @@
-// TAGTOWN player: WILLY — the purple one-eyed star of holowattstheartist's
-// "thrumyeyez" animation. Built from primitives; the whole character lives in
-// buildWilly() — movement/camera/animation rig stay untouched.
+// TAGTOWN player: movement, camera, collision, animation rig.
+// The character model itself is swappable — see js/characters.js.
 import * as THREE from 'three';
-import { lerp, lerpAngle, clamp } from './util.js';
-
-const PURPLE = 0xb14ac9, DARK_PURPLE = 0x8f36a8;
-
-function buildWilly() {
-  const g = new THREE.Group();
-  const purple = new THREE.MeshLambertMaterial({ color: PURPLE });
-  const darkPurple = new THREE.MeshLambertMaterial({ color: DARK_PURPLE });
-  const blackM = new THREE.MeshLambertMaterial({ color: 0x161616 });
-  const whiteM = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  const pupilM = new THREE.MeshLambertMaterial({ color: 0x111111 });
-  const mouthM = new THREE.MeshLambertMaterial({ color: 0x3d0f2e });
-  const tongueM = new THREE.MeshLambertMaterial({ color: 0xff8fa3 });
-
-  // legs: thin purple stems + HUGE black clown shoes
-  function leg(side) {
-    const hip = new THREE.Group();
-    hip.position.set(side * 0.2, 0.78, 0);
-    const legM = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.55, 10), darkPurple);
-    legM.position.y = -0.28; legM.castShadow = true;
-    const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 12), blackM);
-    shoe.scale.set(0.85, 0.7, 1.5);          // oversized, pointing forward
-    shoe.position.set(0, -0.62, 0.12); shoe.castShadow = true;
-    hip.add(legM, shoe);
-    return hip;
-  }
-  const hipL = leg(-1), hipR = leg(1);
-
-  // body: big purple gumdrop
-  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.58, 22, 18), purple);
-  belly.scale.set(1, 1.12, 0.92);
-  belly.position.y = 1.32; belly.castShadow = true;
-  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.35, 14), purple);  // the little point on top
-  tip.position.y = 1.95; tip.castShadow = true;
-
-  // arms: thin, mitten hands
-  function arm(side) {
-    const sh = new THREE.Group();
-    sh.position.set(side * 0.58, 1.5, 0);
-    const a = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.5, 10), darkPurple);
-    a.position.y = -0.26; a.castShadow = true;
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), purple);
-    hand.scale.set(1, 1.25, 0.8); hand.position.y = -0.56; hand.castShadow = true;
-    sh.add(a, hand);
-    return sh;
-  }
-  const shL = arm(-1), shR = arm(1);
-  shL.rotation.z = 0.25; shR.rotation.z = -0.25;
-
-  // face (rides the head-turn anim): one big eye, buck teeth, tongue out
-  const headG = new THREE.Group(); headG.position.y = 1.62;
-  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), whiteM);
-  eye.scale.set(1.25, 0.85, 0.6); eye.position.set(0, 0.12, 0.42);
-  const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), pupilM);
-  pupil.position.set(0, 0.12, 0.52);
-  const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), mouthM);
-  mouth.scale.set(1.15, 1.0, 0.55); mouth.position.set(0, -0.18, 0.38);
-  const toothGeo = new THREE.BoxGeometry(0.09, 0.09, 0.05);
-  const t1 = new THREE.Mesh(toothGeo, whiteM); t1.position.set(-0.05, -0.06, 0.47);
-  const t2 = new THREE.Mesh(toothGeo, whiteM); t2.position.set(0.05, -0.06, 0.47);
-  const tongue = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 10), tongueM);
-  tongue.scale.set(1.1, 0.45, 0.8); tongue.position.set(0, -0.3, 0.44);
-  headG.add(eye, pupil, mouth, t1, t2, tongue);
-
-  g.add(hipL, hipR, belly, tip, shL, shR, headG);
-  return { group: g, hipL, hipR, shL, shR, headG, belly, bellyY: 1.32, hipY: 0.78 };
-}
+import { lerp, lerpAngle, clamp, settings } from './util.js';
+import { CHARACTERS } from './characters.js';
 
 export class Player {
   constructor(scene) {
-    const t = buildWilly();
-    this.group = t.group; this.parts = t;
+    this.group = new THREE.Group();
     this.group.position.set(0, 0, 6);
     scene.add(this.group);
+    this.toon = null;
+    this.setCharacter(settings.character || 'willy');
 
     this.pos = this.group.position;
     this.vel = new THREE.Vector3();
@@ -117,6 +52,16 @@ export class Player {
     this.camDist = 8.2;
     this._camTarget = new THREE.Vector3();
   }
+  setCharacter(id) {
+    if (!CHARACTERS[id]) id = 'willy';
+    if (this.toon) this.group.remove(this.toon);
+    const t = CHARACTERS[id].build();
+    this.toon = t.group;
+    this.parts = t;
+    this.characterId = id;
+    this.group.add(this.toon);
+  }
+  get characterName() { return CHARACTERS[this.characterId].name; }
   setInput(x, z) { this.input.x = x; this.input.z = z; }
   toggleRide() {
     this.riding = !this.riding;
@@ -131,7 +76,7 @@ export class Player {
   jump() { if (this.grounded) { this.vy = this.riding ? 7.2 : 5.4; this.grounded = false; } }
 
   getHeadPos(out) {
-    return out.set(this.pos.x, this.pos.y + 1.78, this.pos.z);
+    return out.set(this.pos.x, this.pos.y + this.parts.headY, this.pos.z);
   }
 
   // Horizontal move + collide. refYaw = the camera yaw the stick is relative to.
@@ -214,8 +159,8 @@ export class Player {
     this.parts.hipR.rotation.x = -sw - rb * 0.42;
     this.parts.shL.rotation.x = -sw * 0.8;
     this.parts.shR.rotation.x = sw * 0.8;
-    this.parts.shL.rotation.z = 0.18 + rb * 0.95;   // arms out for balance
-    this.parts.shR.rotation.z = -0.18 - rb * 0.95;
+    this.parts.shL.rotation.z = this.parts.armZ + rb * 0.95;   // arms out for balance
+    this.parts.shR.rotation.z = -this.parts.armZ - rb * 0.95;
     this.parts.hipL.position.y = this.parts.hipY + rb * 0.16;  // feet up on the deck
     this.parts.hipR.position.y = this.parts.hipY + rb * 0.16;
     this.parts.belly.position.y = this.parts.bellyY + Math.abs(Math.sin(this.walkPhase)) * 0.05 * this.moveAmt;
