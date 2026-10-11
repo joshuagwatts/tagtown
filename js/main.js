@@ -63,7 +63,7 @@ const ui = new UI({
   },
   onToggleSpray: () => {
     if (spray.active) spray.exit();
-    else { spray.enter(); toast('Drag to aim · hold the spray button to paint the walls'); }
+    else { spray.enter(); toast('Drag to aim · second finger (or hold the button) sprays'); }
   },
   onExitSpray: () => spray.exit(),
   onHoldSpray: down => { spray.spraying = down; },
@@ -75,6 +75,7 @@ const ui = new UI({
       if (settings.difficulty === 'easy') spray.refill();
     }
     if (key === 'quality') { applyQuality(); resize(); }
+    if (key === 'handed') ui.applyHandedness();
   },
   sprayActive: () => spray.active,
 });

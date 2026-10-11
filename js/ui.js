@@ -7,7 +7,7 @@ export class UI {
     this.hooks = hooks;               // {onJump,onToggleSpray,onExitSpray,onHoldSpray(down),onLook,onColor,onSettings}
     this.joy = { x: 0, z: 0 };
     this.keys = {};
-    this._joyId = null; this._lookId = null;
+    this._joyId = null; this._lookId = null; this._sprayTouchId = null;
     this._joyCX = 0; this._joyCY = 0;
     this._lastLX = 0; this._lastLY = 0;
     this._mouseLook = false; this._mlx = 0; this._mly = 0;
@@ -23,6 +23,17 @@ export class UI {
     this.buildPalette();
     this.bindSettings();
     this.refreshSettingsUI();
+    this.applyHandedness();
+  }
+
+  applyHandedness() {
+    document.body.classList.toggle('lefty', settings.handed === 'left');
+  }
+  inLookZone(x) {
+    // right-handed: look on the right; left-handed: look on the left
+    return settings.handed === 'left'
+      ? x < window.innerWidth * 0.58
+      : x > window.innerWidth * 0.42;
   }
 
   // ---------- touch ----------
@@ -63,15 +74,29 @@ export class UI {
           this.joyBase.style.display = this.joyKnob.style.display = 'none';
         }
         if (t.identifier === this._lookId) this._lookId = null;
+        if (t.identifier === this._sprayTouchId) {
+          this._sprayTouchId = null;
+          this.hooks.onHoldSpray(false);
+        }
       }
     };
     document.addEventListener('touchmove', move, { passive: false });
     document.addEventListener('touchend', end);
     document.addEventListener('touchcancel', end);
-    // look-drag starts on the 3D view (right side), not on HUD buttons
+    // look-drag starts on the 3D view (not on HUD buttons).
+    // spray mode: first finger aims, ANY second finger on the view sprays —
+    // no more reaching for a corner button while aiming.
     document.getElementById('game').addEventListener('touchstart', e => {
       for (const t of e.changedTouches) {
-        if (this._lookId === null && t.clientX > window.innerWidth * 0.42) {
+        if (this.hooks.sprayActive()) {
+          if (this._lookId === null && this.inLookZone(t.clientX)) {
+            this._lookId = t.identifier;
+            this._lastLX = t.clientX; this._lastLY = t.clientY;
+          } else if (this._sprayTouchId === null) {
+            this._sprayTouchId = t.identifier;
+            this.hooks.onHoldSpray(true);
+          }
+        } else if (this._lookId === null && this.inLookZone(t.clientX)) {
           this._lookId = t.identifier;
           this._lastLX = t.clientX; this._lastLY = t.clientY;
         }
@@ -173,13 +198,15 @@ export class UI {
         this.hooks.onSettings(key);
         toast(key === 'difficulty'
           ? (settings.difficulty === 'easy' ? '😌 Easy: infinite paint' : '🎯 Normal: paint runs out — refill at the can by the door')
-          : ('Quality: ' + settings.quality));
+          : key === 'handed'
+            ? (settings.handed === 'left' ? '👈 Left-handed controls' : '👉 Right-handed controls')
+            : ('Quality: ' + settings.quality));
       });
     };
-    seg('segDiff', 'difficulty'); seg('segQual', 'quality');
+    seg('segDiff', 'difficulty'); seg('segQual', 'quality'); seg('segHand', 'handed');
   }
   refreshSettingsUI() {
-    for (const [id, key] of [['segDiff', 'difficulty'], ['segQual', 'quality']]) {
+    for (const [id, key] of [['segDiff', 'difficulty'], ['segQual', 'quality'], ['segHand', 'handed']]) {
       document.getElementById(id).querySelectorAll('button').forEach(b =>
         b.classList.toggle('sel', b.dataset.v === settings[key]));
     }

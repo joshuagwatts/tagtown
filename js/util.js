@@ -18,7 +18,7 @@ export function toast(msg, ms = 2200) {
 // Persistent settings (difficulty, quality, paint color)
 const KEY = 'tagtown.settings.v1';
 export const settings = Object.assign(
-  { difficulty: 'easy', quality: 'high', color: '#e63946' },
+  { difficulty: 'easy', quality: 'high', color: '#e63946', handed: 'right' },
   JSON.parse(localStorage.getItem(KEY) || '{}')
 );
 export function saveSettings() {

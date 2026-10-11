@@ -66,6 +66,13 @@
     z-index:11; display:none; width:92px; height:92px; font-size:14px; }
   #btnHoldSpray.show { display:flex; }
 
+  /* left-handed layout: stick right, look left, buttons left */
+  body.lefty #joy { left:auto; right:0; }
+  body.lefty #btnJump { right:auto; left:110px; }
+  body.lefty #btnSpray { right:auto; left:18px; }
+  body.lefty #btnSkate { right:auto; left:202px; }
+  body.lefty #btnHoldSpray { right:auto; left:18px; }
+
   /* settings */
   #settingsPanel { position:fixed; z-index:30; left:50%; top:50%; transform:translate(-50%,-50%);
     background:#1d1d2b; color:#fff; border-radius:20px; padding:22px; width:min(340px,88vw);
@@ -122,13 +129,19 @@
       <button data-v="normal">🎯 Normal</button>
     </div>
   </div>
+  <div class="row">Controls
+    <div class="seg" id="segHand">
+      <button data-v="right">👉 Right</button>
+      <button data-v="left">👈 Left</button>
+    </div>
+  </div>
   <div class="row">Quality
     <div class="seg" id="segQual">
       <button data-v="high">High</button>
       <button data-v="low">Low</button>
     </div>
   </div>
-  <p class="hint">Easy: infinite paint, big splats. Normal: paint runs out — grab the paint-can pickup by the door to refill.<br><br>Walk: left stick / WASD · Look: drag / mouse · Jump: button / Space · Skate: 🛹 / R · Spray mode: 🎨 button / F · Paint: hold the spray button / mouse.</p>
+  <p class="hint">Easy: infinite paint, big splats. Normal: paint runs out — grab the paint-can pickup by the door to refill.<br><br>Walk: stick / WASD · Look: drag / mouse · Jump / Space · Skate: 🛹 / R · Spray: 🎨 / F. In spray mode drag anywhere to aim and touch with a second finger (or hold the spray button) to paint.</p>
   <button class="close" id="btnCloseSettings">Done</button>
 </div>
 
@@ -138,6 +151,6 @@
 <script type="importmap">
 { "imports": { "three": "./js/vendor/three.module.js" } }
 </script>
-<script type="module" src="js/main.js?v=1"></script>
+<script type="module" src="js/main.js?v=2"></script>
 </body>
 </html>

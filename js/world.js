@@ -90,10 +90,12 @@ export function buildWorld(scene) {
     { wM: BW, hM: BH }, { wM: BW, hM: BH },   // +x, -x
     { wM: BD, hM: BH }, { wM: BD, hM: BH },   // +z, -z
   ];
-  const wallMats = wallDefs.map(d => {
+  const wallMats = wallDefs.map((d, i) => {
     const { canvas, ctx, tex } = wallCanvas('#f6e7c8', '#d94f3d');
     const mat = new THREE.MeshLambertMaterial({ map: tex });
-    paintables.push({ mesh: null, canvas, ctx, tex, wM: d.wM, hM: d.hM });
+    // box material slots: 0:+x 1:-x 2:+y 3:-y 4:+z 5:-z — record which slot
+    // this canvas belongs to so spray paint lands on the face you aimed at
+    paintables.push({ mesh: null, mat: [0, 1, 4, 5][i], canvas, ctx, tex, wM: d.wM, hM: d.hM });
     return mat;
   });
   const roofMat = lambert(0xc0392b), underMat = lambert(0x8a6a4a);
@@ -166,7 +168,7 @@ export function buildWorld(scene) {
     run.position.set(px, FH / 2, pz); run.rotation.y = ry;
     run.castShadow = run.receiveShadow = true;
     scene.add(run);
-    paintables.push({ mesh: run, canvas, ctx, tex, wM: len, hM: FH });
+    paintables.push({ mesh: run, mat: paintFaceIdx, canvas, ctx, tex, wM: len, hM: FH });
     // posts
     const postMat = lambert(0x8a5a2e);
     const n = Math.round(len / 4);

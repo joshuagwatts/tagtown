@@ -186,7 +186,10 @@ export class SprayMode {
       this.camera.getWorldDirection(this._v3);
       if (hits.length && hits[0].uv) {
         const h = hits[0];
-        const surf = this.world.paintables.find(p => p.mesh === h.object);
+        // pick the canvas for the exact face hit (mesh is shared across faces)
+        const mi = h.face ? h.face.materialIndex : -1;
+        let surf = this.world.paintables.find(p => p.mesh === h.object && p.mat === mi);
+        if (!surf) surf = this.world.paintables.find(p => p.mesh === h.object);
         if (surf) {
           this.paintAt(surf, h.uv, h.distance);
           this._hitP.copy(h.point);
