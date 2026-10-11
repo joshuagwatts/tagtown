@@ -112,14 +112,14 @@ export class UI {
     const start = () => {};
     document.getElementById('game').addEventListener('mousedown', e => {
       this._mouseLook = true; this._mlx = e.clientX; this._mly = e.clientY;
-      if (this.hooks.sprayActive()) this.hooks.onToggleSprayBtn();
+      if (this.hooks.sprayActive()) this.hooks.onSprayDown();
     });
     document.addEventListener('mousemove', e => {
       if (!this._mouseLook) return;
       this.hooks.onLook(e.clientX - this._mlx, e.clientY - this._mly);
       this._mlx = e.clientX; this._mly = e.clientY;
     });
-    document.addEventListener('mouseup', () => { this._mouseLook = false; });
+    document.addEventListener('mouseup', () => { this._mouseLook = false; this.hooks.onSprayUp(); });
     document.addEventListener('contextmenu', e => e.preventDefault());
   }
 
@@ -162,7 +162,7 @@ export class UI {
     this.press($('btnSkate'), () => this.hooks.onToggleRide());
     this.press($('btnSpray'), () => this.hooks.onToggleSpray());
     this.press($('btnExitSpray'), () => this.hooks.onExitSpray());
-    this.press($('btnSprayToggle'), () => this.hooks.onToggleSprayBtn());
+    this.press($('btnSprayHold'), () => this.hooks.onSprayDown(), () => this.hooks.onSprayUp());
     this.press($('btnGear'), () => $('settingsPanel').classList.add('show'));
     this.press($('btnCloseSettings'), () => $('settingsPanel').classList.remove('show'));
   }

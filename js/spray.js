@@ -164,12 +164,11 @@ export class SprayMode {
     this.cap = cap; settings.cap = cap.id;
     saveSettings();
   }
-  // tap the spray button to toggle — built for two thumbs:
-  // left stick walks, right thumb aims, paint stays on while you move
-  toggleSpray() {
-    if (!this.active) return;
-    this.spraying = !this.spraying;
-    document.getElementById('btnSprayToggle').classList.toggle('active', this.spraying);
+  // hold the spray button to spray, release to stop
+  setSpraying(on) {
+    if (!this.active) on = false;
+    this.spraying = on;
+    document.getElementById('btnSprayHold').classList.toggle('active', on);
   }
   get infinite() { return settings.difficulty === 'easy'; }
 
@@ -184,7 +183,7 @@ export class SprayMode {
     document.getElementById('crosshair').style.display = 'block';
     document.getElementById('palette').classList.add('show');
     document.getElementById('stencils').classList.add('show');
-    document.getElementById('btnSprayToggle').classList.add('show');
+    document.getElementById('btnSprayHold').classList.add('show');
     document.getElementById('btnSpray').classList.add('active');
     document.getElementById('btnExitSpray').style.display = 'flex';
     document.getElementById('btnJump').style.display = 'none';
@@ -198,7 +197,7 @@ export class SprayMode {
     document.getElementById('crosshair').style.display = 'none';
     document.getElementById('palette').classList.remove('show');
     document.getElementById('stencils').classList.remove('show');
-    const tgl = document.getElementById('btnSprayToggle');
+    const tgl = document.getElementById('btnSprayHold');
     tgl.classList.remove('show'); tgl.classList.remove('active');
     document.getElementById('btnSpray').classList.remove('active');
     document.getElementById('btnExitSpray').style.display = 'none';

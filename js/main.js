@@ -73,7 +73,8 @@ const ui = new UI({
     }
   },
   onExitSpray: () => spray.exit(),
-  onToggleSprayBtn: () => spray.toggleSpray(),
+  onSprayDown: () => spray.setSpraying(true),
+  onSprayUp: () => spray.setSpraying(false),
   onLook: (dx, dy) => { spray.active ? spray.addLook(dx, dy) : player.addLook(dx, dy); },
   onColor: hex => { spray.setColor(hex); ui.markColor(hex); },
   onStencil: id => { spray.setStencil(id); ui.markStencil(id); },
@@ -87,13 +88,13 @@ const ui = new UI({
     if (key === 'handed') ui.applyHandedness();
     if (key === 'character') {
       player.setCharacter(settings.character);
-      document.querySelector('#title small').textContent = `starring ${player.characterName} · v6`;
+      document.querySelector('#title small').textContent = `starring ${player.characterName} · v7`;
     }
   },
   sprayActive: () => spray.active,
 });
 
-document.querySelector('#title small').textContent = `starring ${player.characterName} · v6`;
+document.querySelector('#title small').textContent = `starring ${player.characterName} · v7`;
 
 const clock = new THREE.Clock();
 let first = true;
