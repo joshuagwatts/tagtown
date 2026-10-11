@@ -123,7 +123,7 @@ export class SprayMode {
     this.cap = CAPS.find(c => c.id === settings.cap) || CAPS[1];
     this.paint = 100;   // normal mode meter
     this.ray = new THREE.Raycaster();
-    this.ray.far = 14;
+    this.ray.far = 60;   // tag across the whole block
     this.particles = new SprayParticles(scene);
     this._v1 = new THREE.Vector3(); this._v2 = new THREE.Vector3(); this._v3 = new THREE.Vector3();
     this._hitP = new THREE.Vector3();
