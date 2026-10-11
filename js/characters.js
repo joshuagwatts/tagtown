@@ -145,11 +145,86 @@ function buildWilly() {
 }
 
 
+
+// WILLY v2 — proportion-nailed pass against the thrumyeyez thumbnail:
+// gumdrop body, huge high eye, mouth = half the face, stubby legs,
+// truly enormous clown shoes, fingered hands.
+function buildWilly2() {
+  const g = new THREE.Group();
+  const purple = new THREE.MeshLambertMaterial({ color: 0xb14ac9 });
+  const darkPurple = new THREE.MeshLambertMaterial({ color: 0x8f36a8 });
+  const blackM = new THREE.MeshLambertMaterial({ color: 0x161616 });
+  const whiteM = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const pupilM = new THREE.MeshLambertMaterial({ color: 0x111111 });
+  const mouthM = new THREE.MeshLambertMaterial({ color: 0x3d0f2e });
+  const tongueM = new THREE.MeshLambertMaterial({ color: 0xff8fa3 });
+
+  // stubby legs + ENORMOUS shoes
+  function leg(side) {
+    const hip = new THREE.Group();
+    hip.position.set(side * 0.2, 0.72, 0);
+    const legM = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.055, 0.42, 10), darkPurple);
+    legM.position.y = -0.21; legM.castShadow = true;
+    const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 12), blackM);
+    shoe.scale.set(0.9, 0.72, 1.6);
+    shoe.position.set(0, -0.5, 0.16); shoe.castShadow = true;
+    hip.add(legM, shoe);
+    return hip;
+  }
+  const hipL = leg(-1), hipR = leg(1);
+
+  // big gumdrop body
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.62, 24, 18), purple);
+  belly.scale.set(1.08, 1.02, 0.95);
+  belly.position.y = 1.3; belly.castShadow = true;
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.32, 14), purple);
+  tip.position.y = 1.9; tip.castShadow = true;
+
+  // thin dangly arms with fingered hands
+  function arm(side) {
+    const sh = new THREE.Group();
+    sh.position.set(side * 0.64, 1.42, 0);
+    const a = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.55, 10), darkPurple);
+    a.position.y = -0.28; a.castShadow = true;
+    const palm = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 10), purple);
+    palm.scale.set(1, 1.2, 0.7); palm.position.y = -0.6; palm.castShadow = true;
+    sh.add(a, palm);
+    for (let f = -1; f <= 1; f++) {
+      const finger = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.024, 0.11, 8), purple);
+      finger.position.set(f * 0.055, -0.73, 0.01);
+      finger.rotation.z = -f * 0.35;
+      sh.add(finger);
+    }
+    return sh;
+  }
+  const shL = arm(-1), shR = arm(1);
+  shL.rotation.z = 0.3; shR.rotation.z = -0.3;
+
+  // face: one huge high eye, mouth = half the face
+  const headG = new THREE.Group(); headG.position.y = 1.6;
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.19, 18, 14), whiteM);
+  eye.scale.set(1.35, 0.8, 0.55); eye.position.set(0, 0.12, 0.47);
+  const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), pupilM);
+  pupil.position.set(0, 0.12, 0.565);
+  const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.27, 18, 14), mouthM);
+  mouth.scale.set(1.25, 1.0, 0.5); mouth.position.set(0, -0.32, 0.47);
+  const toothGeo = new THREE.BoxGeometry(0.12, 0.14, 0.06);
+  const t1 = new THREE.Mesh(toothGeo, whiteM); t1.position.set(-0.07, -0.12, 0.56);
+  const t2 = new THREE.Mesh(toothGeo, whiteM); t2.position.set(0.07, -0.12, 0.56);
+  const tongue = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 12), tongueM);
+  tongue.scale.set(1.2, 0.5, 0.7); tongue.position.set(0, -0.48, 0.52);
+  headG.add(eye, pupil, mouth, t1, t2, tongue);
+
+  g.add(hipL, hipR, belly, tip, shL, shR, headG);
+  return { group: g, hipL, hipR, shL, shR, headG, belly, bellyY: 1.3, hipY: 0.72, armZ: 0.3, headY: 1.72 };
+}
+
 // NOTE: Joshua has a real 3D Willy model coming. When it lands, add a
 // buildWillyHD() here that loads the GLB (vendor GLTFLoader alongside
 // three.module.js) and maps its nodes onto the same rig fields
 // (hipL/hipR/shL/shR/headG/belly + bellyY/hipY/armZ/headY).
 export const CHARACTERS = {
   willy: { name: 'Willy', tag: 'prototype', build: buildWilly },
+  willy2: { name: 'Willy v2', tag: 'prototype', build: buildWilly2 },
   homer: { name: 'Homer (dummy)', tag: 'prototype', build: buildHomer },
 };

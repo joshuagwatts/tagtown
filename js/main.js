@@ -85,13 +85,13 @@ const ui = new UI({
     if (key === 'handed') ui.applyHandedness();
     if (key === 'character') {
       player.setCharacter(settings.character);
-      document.querySelector('#title small').textContent = `starring ${player.characterName} · v4`;
+      document.querySelector('#title small').textContent = `starring ${player.characterName} · v5`;
     }
   },
   sprayActive: () => spray.active,
 });
 
-document.querySelector('#title small').textContent = `starring ${player.characterName} · v4`;
+document.querySelector('#title small').textContent = `starring ${player.characterName} · v5`;
 
 const clock = new THREE.Clock();
 let first = true;

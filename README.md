@@ -19,8 +19,7 @@ all local — no server. Multiplayer is stubbed in `js/net.js` (Trystero room `t
 planned, like LIMBO).
 
 **Files:** `index.html` + `js/` (main, world, player, spray, ui, net, util, characters).
-Character system: `js/characters.js` holds swappable protagonist builds (Willy +
-Homer dummy, more anytime) — every builder returns the same rig
+Character system: `js/characters.js` holds swappable protagonist builds (Willy, Willy v2 + Homer dummy, more anytime) — every builder returns the same rig
 `{group, hipL, hipR, shL, shR, headG, belly, bellyY, hipY, armZ, headY}`,
 pickable in ⚙️ Settings → Character, persisted. When Joshua's real 3D Willy
 model lands, add a `buildWillyHD()` GLB loader there (see the NOTE in the file).
