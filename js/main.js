@@ -69,7 +69,7 @@ const ui = new UI({
         document.getElementById('btnSkate').classList.remove('active');
       }
       spray.enter();
-      toast('Left stick walks · drag aims · tap 🎨 to toggle paint');
+      toast('Left stick walks · drag aims · hold 🖌️ to spray');
     }
   },
   onExitSpray: () => spray.exit(),
@@ -88,13 +88,13 @@ const ui = new UI({
     if (key === 'handed') ui.applyHandedness();
     if (key === 'character') {
       player.setCharacter(settings.character);
-      document.querySelector('#title small').textContent = `starring ${player.characterName} · v7`;
+      document.querySelector('#title small').textContent = `starring ${player.characterName} · v8`;
     }
   },
   sprayActive: () => spray.active,
 });
 
-document.querySelector('#title small').textContent = `starring ${player.characterName} · v7`;
+document.querySelector('#title small').textContent = `starring ${player.characterName} · v8`;
 
 const clock = new THREE.Clock();
 let first = true;
@@ -118,7 +118,7 @@ function loop() {
     if (settings.difficulty === 'normal' && world.pickup.visible) {
       world.pickup.getWorldPosition(_pp);
       const d = Math.hypot(player.pos.x - _pp.x, player.pos.z - _pp.z);
-      if (d < 1.6) { spray.refill(); world.takePickup(); toast('🎨 Paint refilled!'); }
+      if (d < 1.6) { spray.refill(); world.takePickup(); toast('🖌️ Paint refilled!'); }
     }
   }
   world.update(dt, t);
@@ -126,7 +126,7 @@ function loop() {
 
   if (first) {
     first = false;
-    setTimeout(() => toast('Left stick to walk · drag to look · 🎨 button for spray mode', 3600), 600);
+    setTimeout(() => toast('Left stick to walk · drag to look · 🖌️ button for spray mode', 3600), 600);
   }
   renderer.render(scene, camera);
 }

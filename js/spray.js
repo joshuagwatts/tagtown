@@ -43,7 +43,7 @@ const traceCrown = (ctx, px, py, r) => poly(ctx, px, py, r,
   [[-0.9, 0.6], [-0.9, -0.3], [-0.45, 0.1], [0, -0.6], [0.45, 0.1], [0.9, -0.3], [0.9, 0.6]]);
 
 const STENCILS = [
-  { id: 'free',  icon: '🎨', mode: 'fill' },
+  { id: 'free',  icon: '🖌️', mode: 'fill' },
   { id: 'star',  icon: '⭐', mode: 'fill', trace: traceStar },
   { id: 'heart', icon: '💜', mode: 'fill', trace: traceHeart },
   { id: 'bolt',  icon: '⚡', mode: 'fill', trace: traceBolt },
